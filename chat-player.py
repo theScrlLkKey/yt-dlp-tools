@@ -1,3 +1,4 @@
+import os
 import vlc
 import time
 import json
@@ -40,32 +41,44 @@ with open(f"test/{video_id}.live_chat.json", encoding="utf8") as file:
                     minutes=int(timestamp_min),
                     seconds=int(timestamp_sec)
                 ).total_seconds()
-            else:  # do not display pre chat
+            else:  # display pre-chat
                 total_seconds = -1
+                # print("[PRE", chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"][ "authorName"]["simpleText"], "]",chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["message"]["runs"][0]["text"])
+
             chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["timestampText"]["parsed"] = total_seconds
             chat_data.append(chat_message)
         except KeyError:
             # Handle missing keys or other errors
             print("Skipping chat message due to missing keys:", chat_message)
 
+chat_data_clean = chat_data
+last_time = 0
+
 
 # Callback function to display chat messages
 def display_content(event):
+    global last_time
+    global chat_data
     current_time = event.u.new_time  # milliseconds
 
+    # on rewind, clear screen and refill chat messages
+    if current_time < last_time:
+        chat_data = chat_data_clean
+        os.system('cls' if os.name == 'nt' else 'clear')
     # Display chat messages
-    for chat_message in chat_data:
+    for chat_message_func in chat_data:
         try:
-            chat_timestamp = int(chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["timestampText"]["parsed"])
-            # print(str(chat_timestamp) + " " + str(current_time/1000))
+            chat_timestamp = int(chat_message_func["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["timestampText"]["parsed"])
+            # print(str(chat_timestamp) + " " + str(int(current_time/1000)))
             if chat_timestamp <= current_time/1000:
-                print("[", chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["authorName"]["simpleText"], "]", chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["message"]["runs"][0]["text"])
-                chat_data.pop(chat_data.index(chat_message))  # disable to allow rewinding, will re print screen every time however
+                print("[", chat_message_func["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["timestampText"]["simpleText"], chat_message_func["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["authorName"]["simpleText"], "]", chat_message_func["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["message"]["runs"][0]["text"])
+                chat_data.pop(chat_data.index(chat_message_func))
         except KeyError:
             # Handle missing keys or other errors
             # print("Skipping chat message due to missing keys:", chat_message)
             # bots/donos
             pass
+    last_time = current_time
 
 
 # Register the callback function
