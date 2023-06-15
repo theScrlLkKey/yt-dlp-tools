@@ -4,6 +4,9 @@ import json
 from datetime import timedelta
 
 # TODO: use windows media api instead of screwing around with vlc? can i make a VLC plugin? i want to attach to an existing vlc instance
+# grab current elapsed time from VLC web XML doc, then feed that in. dont pop from list
+# get title, if title changes change file we are reading from
+# maybe attempt to compensate for lag, offset is included in live chat json
 
 # get video ID from user
 video_id = input('Video ID:  ')
@@ -39,7 +42,6 @@ with open(f"test/{video_id}.live_chat.json", encoding="utf8") as file:
                 ).total_seconds()
             else:  # do not display pre chat
                 total_seconds = -1
-                # print("[PRE", chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"][ "authorName"]["simpleText"], "]",chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["message"]["runs"][0]["text"])
             chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["timestampText"]["parsed"] = total_seconds
             chat_data.append(chat_message)
         except KeyError:
