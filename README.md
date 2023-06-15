@@ -1,2 +1,2 @@
 # yt-dlp-tools
-a collections of tools for viewing json files downloaded by yt-dlp
+a collection of tools for viewing json files downloaded by yt-dlp
