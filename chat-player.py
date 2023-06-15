@@ -1,7 +1,9 @@
 import vlc
 import time
 import json
-from datetime import datetime, timedelta
+from datetime import timedelta
+
+# TODO: use windows media api instead of screwing around with vlc? can i make a VLC plugin? i want to attach to an existing vlc instance
 
 # get video ID from user
 video_id = input('Video ID:  ')
@@ -21,36 +23,47 @@ with open(f"test/{video_id}.live_chat.json", encoding="utf8") as file:
         chat_message = json.loads(line)
         try:
             timestamp_text = chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["timestampText"]["simpleText"]
-            timestamp = datetime.strptime(timestamp_text, "%H:%M:%S")
-            total_seconds = timedelta(
-                hours=timestamp.hour,
-                minutes=timestamp.minute,
-                seconds=timestamp.second
-            ).total_seconds()
-            chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["timestampText"]["simpleText"] = total_seconds
+            if "-" not in timestamp_text:
+                timestamp_hour, timestamp_min_sec = timestamp_text.split(':', 1)  # split into hour and minsec
+                if ":" in timestamp_min_sec:
+                    timestamp_min, timestamp_sec = timestamp_min_sec.split(':')  # try to split further
+                else:
+                    # not yet into hours, fix it
+                    timestamp_min = timestamp_hour
+                    timestamp_sec = timestamp_min_sec
+                    timestamp_hour = "0"
+                total_seconds = timedelta(
+                    hours=int(timestamp_hour),
+                    minutes=int(timestamp_min),
+                    seconds=int(timestamp_sec)
+                ).total_seconds()
+            else:  # do not display pre chat
+                total_seconds = -1
+                # print("[PRE", chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"][ "authorName"]["simpleText"], "]",chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["message"]["runs"][0]["text"])
+            chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["timestampText"]["parsed"] = total_seconds
             chat_data.append(chat_message)
         except KeyError:
             # Handle missing keys or other errors
             print("Skipping chat message due to missing keys:", chat_message)
-        except ValueError:
-            # we cannot account for pre-chat
-            print("Skipping chat message, pre-chat:", chat_message)
 
 
 # Callback function to display chat messages
 def display_content(event):
-    current_time = event.u.new_time
+    current_time = event.u.new_time  # milliseconds
 
     # Display chat messages
     for chat_message in chat_data:
-        input(chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["timestampText"]["simpleText"])
-        input(current_time)
-        if chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["timestampText"]["simpleText"] <= current_time:
-            try:
+        try:
+            chat_timestamp = int(chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["timestampText"]["parsed"])
+            # print(str(chat_timestamp) + " " + str(current_time/1000))
+            if chat_timestamp <= current_time/1000:
                 print("[", chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["authorName"]["simpleText"], "]", chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["message"]["runs"][0]["text"])
-            except KeyError:
-                # Handle missing keys or other errors
-                print("Skipping chat message due to missing keys:", chat_message)
+                chat_data.pop(chat_data.index(chat_message))  # disable to allow rewinding, will re print screen every time however
+        except KeyError:
+            # Handle missing keys or other errors
+            # print("Skipping chat message due to missing keys:", chat_message)
+            # bots/donos
+            pass
 
 
 # Register the callback function
