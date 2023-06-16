@@ -9,6 +9,7 @@ from xml.etree import ElementTree
 # grab current elapsed time from VLC web XML doc, then feed that in. - done
 # get title, if title changes change file we are reading from
 # maybe attempt to compensate for lag, offset is included in live chat json
+# allow video switching without reloading the program
 # display donations
 
 chat_data_clean = []
@@ -73,7 +74,20 @@ def display_content(seconds):
             if chat_timestamp <= current_time:
                 # because youtube is actually stupid, messages with emojis are split into
                 # ["message"]["runs"][0]["text"] ["message"]["runs"][1]["emoji"]["emojiId"] etc
-                print("[", chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["timestampText"]["simpleText"], chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["authorName"]["simpleText"], "]", chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["message"]["runs"][0]["text"])
+                message_run_itr = 0
+                message_parsed = ""
+                # not super great code here
+                for i in range(len(chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["message"]["runs"])):
+                    try:
+                        message_parsed += chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["message"]["runs"][i]["text"]
+                    except KeyError:
+                        try:
+                            message_parsed += chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["message"]["runs"][i]["emoji"]["emojiId"]
+                        except KeyError:
+                            input("something other than emoji or text?")
+                            print(message_parsed)
+                            exit()
+                print("[", chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["timestampText"]["simpleText"], chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["authorName"]["simpleText"], "]", message_parsed)
                 indexes_remove.append(int(chat_data.index(chat_message)))
             else:
                 # now we have printed all the current messages, so we remove them
@@ -96,13 +110,7 @@ def display_content(seconds):
                     indexes_remove.append(int(chat_data.index(chat_message)))
             except KeyError as err:
                 # welp, guess it wasn't a dono
-                # maybe it was an emoji?
-                chat_timestamp = int(chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["timestampText"]["parsed"])
-                print("got here")
-                # if chat message should be displayed, print it, and the add it into the index of messages we have printed
-                if chat_timestamp <= current_time:
-                    print("[", chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["timestampText"]["simpleText"], chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["authorName"]["simpleText"], "]", chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["message"]["runs"]["emoji"]["emojiId"])
-                    indexes_remove.append(int(chat_data.index(chat_message)))
+                pass
 
     last_time = current_time
 
