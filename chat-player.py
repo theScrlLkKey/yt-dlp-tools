@@ -3,6 +3,7 @@ import time
 import json
 import requests
 from datetime import timedelta
+from xml.etree import ElementTree
 
 # TODO: use windows media api instead of screwing around with vlc? can i make a VLC plugin? i want to attach to an existing vlc instance
 # grab current elapsed time from VLC web XML doc, then feed that in.
@@ -10,6 +11,9 @@ from datetime import timedelta
 # maybe attempt to compensate for lag, offset is included in live chat json
 
 chat_data = []
+# load vlc password from password.txt
+with open('password.txt') as file:
+    vlc_password = file.read()
 
 
 def load_chat(video_id):
@@ -74,16 +78,42 @@ chat_data_clean = chat_data
 last_time = 0
 
 # connect to vlc, parse xml to get currently playing video
+vlc_session = requests.Session()
+vlc_session.auth = ('', vlc_password)  # Username is blank, just provide the password
+try:
+    raw_xml = vlc_session.get('http://localhost:8080/requests/status.xml', verify=False)
+except requests.exceptions.ConnectionError:
+    print("VLC not running. Please open a video first.")
+    exit()
+# parse xml
+tree = ElementTree.fromstring(raw_xml.content)
+track_title = tree.find('information').find('category[@name="meta"]').find('info[@name="PURL"]')
+# yoink video id from url
+track_title = track_title.text.split('/')[-1].replace('watch?v=', '')
 
 # Load the JSON chat data
+load_chat(track_title)
 
 # mainloop
 while True:
     # get xml
-
+    try:
+        raw_xml = vlc_session.get('http://localhost:8080/requests/status.xml', verify=False)
+    except requests.exceptions.ConnectionError:
+        print("VLC has closed.")
+        exit()
     # parse xml, get duration, title
-
-    # switch file,
-
+    tree = ElementTree.fromstring(raw_xml.content)
+    track_title_current = tree.find('information').find('category[@name="meta"]').find('info[@name="PURL"]')
+    elapsed = tree.find('time')
+    # yoink video id from url
+    track_title_current = track_title_current.text.split('/')[-1].replace('watch?v=', '')
+    # switch file if it has switched
+    if track_title_current != track_title:
+        load_chat(track_title_current)
+        track_title = track_title_current
+        elapsed = 0
+    # print chat message for timestamp
+    display_content(elapsed.text)
     # Wait for a small duration
     time.sleep(0.1)
