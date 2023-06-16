@@ -8,8 +8,9 @@ from xml.etree import ElementTree
 # TODO:
 # grab current elapsed time from VLC web XML doc, then feed that in. - done
 # get title, if title changes change file we are reading from
-# maybe attempt to compensate for lag, offset is included in live chat json
 # display donations
+# make emojis lag less
+# maybe attempt to compensate for lag, offset is included in live chat json
 
 chat_data_clean = []
 chat_data = []
@@ -157,4 +158,4 @@ while True:
         # print chat message for timestamp
         display_content(elapsed.text)
         # Wait for a small duration
-        time.sleep(0.1)
+        time.sleep(0.01)
