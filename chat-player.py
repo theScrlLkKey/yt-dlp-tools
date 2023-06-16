@@ -9,48 +9,49 @@ from xml.etree import ElementTree
 # grab current elapsed time from VLC web XML doc, then feed that in. - done
 # get title, if title changes change file we are reading from
 # maybe attempt to compensate for lag, offset is included in live chat json
-# allow video switching without reloading the program
 # display donations
 
 chat_data_clean = []
 chat_data = []
 
 # load vlc password from password.txt
-with open('password.txt') as file:
-    vlc_password = file.read()
+with open('password.txt') as file_pw:
+    vlc_password = file_pw.read()
 
 
 def load_chat(video_id):
     global chat_data
     global chat_data_clean
-    with open(f"test/{video_id}.live_chat.json", encoding="utf8") as file:
-        for line in file:
-            chat_message = json.loads(line)
-            try:
-                timestamp_text = chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["timestampText"]["simpleText"]
-                if "-" not in timestamp_text:
-                    timestamp_hour, timestamp_min_sec = timestamp_text.split(':', 1)  # split into hour and minsec
-                    if ":" in timestamp_min_sec:
-                        timestamp_min, timestamp_sec = timestamp_min_sec.split(':')  # try to split further
-                    else:
-                        # not yet into hours, fix it
-                        timestamp_min = timestamp_hour
-                        timestamp_sec = timestamp_min_sec
-                        timestamp_hour = "0"
-                    total_seconds = timedelta(
-                        hours=int(timestamp_hour),
-                        minutes=int(timestamp_min),
-                        seconds=int(timestamp_sec)
-                    ).total_seconds()
-                else:  # display pre-chat
-                    total_seconds = -1
-                chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["timestampText"]["parsed"] = total_seconds
-                chat_data.append(chat_message)
-            except KeyError:
-                # Handle missing keys or other errors
-                print("Skipping chat message due to missing keys:", chat_message)
-    chat_data_clean = chat_data.copy()
-    # input(chat_data_clean)
+    try:
+        with open(f"test/{video_id}.live_chat.json", encoding="utf8") as file:
+            for line in file:
+                chat_message = json.loads(line)
+                try:
+                    timestamp_text = chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["timestampText"]["simpleText"]
+                    if "-" not in timestamp_text:
+                        timestamp_hour, timestamp_min_sec = timestamp_text.split(':', 1)  # split into hour and minsec
+                        if ":" in timestamp_min_sec:
+                            timestamp_min, timestamp_sec = timestamp_min_sec.split(':')  # try to split further
+                        else:
+                            # not yet into hours, fix it
+                            timestamp_min = timestamp_hour
+                            timestamp_sec = timestamp_min_sec
+                            timestamp_hour = "0"
+                        total_seconds = timedelta(
+                            hours=int(timestamp_hour),
+                            minutes=int(timestamp_min),
+                            seconds=int(timestamp_sec)
+                        ).total_seconds()
+                    else:  # display pre-chat
+                        total_seconds = -1
+                    chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["timestampText"]["parsed"] = total_seconds
+                    chat_data.append(chat_message)
+                except KeyError:
+                    # Handle missing keys or other errors
+                    print("Skipping chat message due to missing keys:", chat_message)
+        chat_data_clean = chat_data.copy()
+    except FileNotFoundError:
+        print("Video has no chat to replay")
 
 
 # Callback function to display chat messages
@@ -74,7 +75,6 @@ def display_content(seconds):
             if chat_timestamp <= current_time:
                 # because youtube is actually stupid, messages with emojis are split into
                 # ["message"]["runs"][0]["text"] ["message"]["runs"][1]["emoji"]["emojiId"] etc
-                message_run_itr = 0
                 message_parsed = ""
                 # not super great code here
                 for i in range(len(chat_message["replayChatItemAction"]["actions"][0]["addChatItemAction"]["item"]["liveChatTextMessageRenderer"]["message"]["runs"])):
@@ -152,8 +152,9 @@ while True:
     if track_title_current != track_title:
         load_chat(track_title_current)
         track_title = track_title_current
-        elapsed = 0
-    # print chat message for timestamp
-    display_content(elapsed.text)
-    # Wait for a small duration
-    time.sleep(0.1)
+        display_content(0)
+    else:
+        # print chat message for timestamp
+        display_content(elapsed.text)
+        # Wait for a small duration
+        time.sleep(0.1)
