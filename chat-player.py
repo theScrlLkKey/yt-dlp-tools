@@ -166,15 +166,10 @@ while True:
     if track_title_current != track_title:
         os.system('cls' if os.name == 'nt' else 'clear')
         load_chat(track_title_current)
-        if chat_data == [";"]:
-            # wait, video has no chat
-            time.sleep(1)
-            continue
         track_title = track_title_current
-        display_content(0)
-    elif chat_data == [";"]:
-        # wait, video has no chat
-        time.sleep(1)
+    elif chat_data == deque([";"]):
+        # video has no chat, sleep
+        time.sleep(2)
         continue
     else:
         # print chat message for timestamp
