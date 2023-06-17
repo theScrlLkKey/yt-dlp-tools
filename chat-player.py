@@ -78,6 +78,8 @@ def load_chat(video_id):
         chat_data_clean = deque(chat_data_clean)
     except FileNotFoundError:
         print("Video has no chat to replay")
+        chat_data = deque([";"])
+        chat_data_clean = deque([";"])
 
 
 # function to display chat messages
@@ -154,14 +156,26 @@ while True:
     # parse xml, get duration, title
     tree = ElementTree.fromstring(raw_xml.content)
     track_title_current = tree.find('information').find('category[@name="meta"]').find('info[@name="PURL"]')
+    if track_title_current is None:
+        time.sleep(2)
+        continue
     elapsed = tree.find('time')
     # yoink video id from url
     track_title_current = track_title_current.text.split('/')[-1].replace('watch?v=', '')
     # switch file if it has switched
     if track_title_current != track_title:
+        os.system('cls' if os.name == 'nt' else 'clear')
         load_chat(track_title_current)
+        if chat_data == [";"]:
+            # wait, video has no chat
+            time.sleep(1)
+            continue
         track_title = track_title_current
         display_content(0)
+    elif chat_data == [";"]:
+        # wait, video has no chat
+        time.sleep(1)
+        continue
     else:
         # print chat message for timestamp
         display_content(elapsed.text)
