@@ -2,9 +2,9 @@ import os
 import time
 import json
 import requests
+from collections import deque
 from datetime import timedelta
 from xml.etree import ElementTree
-from collections import deque
 
 # TODO:
 # grab current elapsed time from VLC web XML doc, then feed that in. - done
@@ -15,6 +15,7 @@ from collections import deque
 # maybe attempt to compensate for lag, offset is included in live chat json
 # fix emoji lag - done
 
+# defaults
 chat_data_clean = []
 chat_data = deque()
 
