@@ -25,6 +25,7 @@ def load_info(video_id):
             info = file.read()
             info = json.loads(info)
             print(info)
+            # parse infojson
     except FileNotFoundError:
         print("Video has no chat to replay")
         # ensure program won't close
@@ -53,6 +54,8 @@ while True:
         continue
     # yoink video id from url
     track_title = track_title.text.split('/')[-1].replace('watch?v=', '')
+    # get duration, end, and volume:
+
     # load new video metadata
     if track_title != last_track:
         load_info(track_title)
@@ -60,6 +63,7 @@ while True:
     # otherwise, it is the same ID sleep or update
     else:
         # run display info, but for now, sleep
-        time.sleep(0.1)
-        continue
-    time.sleep(1)
+        # display_info()
+        pass
+
+    time.sleep(0.5)
