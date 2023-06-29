@@ -27,7 +27,7 @@ def load_info(video_id):
             print(info)
             # parse infojson
     except FileNotFoundError:
-        print("Video has no chat to replay")
+        print("Video has no info to display")
         # ensure program won't close
 
 
