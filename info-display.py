@@ -14,7 +14,7 @@ from xml.etree import ElementTree
 # display tags and categories - done
 # display video id and channel id when paused - done
 # truncate subs to 1k 15k 15mil etc - done
-# maybe display age of video
+# maybe display age of video from today
 # * maybe display thumbnail as ascii art
 
 # set defaults
