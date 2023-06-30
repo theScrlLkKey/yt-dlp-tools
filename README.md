@@ -4,7 +4,8 @@ a collection of tools for viewing json files downloaded by yt-dlp
 - chat-player
   - displays chat replay in sync with a video playing in VLC
 - comment-viewer
-  - displays comments, replies, and likes. hopefully. 
+  - displays comments, replies, likes, and other metadata.
+  - subscriber counts, views, etc are from when the video was archived, not released (or live updating).
 - info-display
   - displays description, likes/dislikes, views, 
 

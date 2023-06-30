@@ -3,6 +3,7 @@ import time
 import json
 import requests
 import datetime
+from datetime import datetime as dt
 from xml.etree import ElementTree
 
 # TODO:
@@ -76,6 +77,8 @@ def load_info(video_id):
             parsed_info["c_id"] = info.get("channel_id")
             parsed_info["tags"] = info.get("tags")
             parsed_info["category"] = info.get("categories")
+            parsed_info["format"] = info.get("format")
+            parsed_info["arc_time"] = dt.utcfromtimestamp(info.get("epoch")).strftime('%Y-%m-%d')
             # maybe we shouldn't assume that the date will always be 8 chars long; whatever
             parsed_info["upload_year"] = str(info.get("upload_date"))[0:4]
             parsed_info["upload_month"] = str(info.get("upload_date"))[4:6]
@@ -110,7 +113,7 @@ def display_info(p, state):
         print(", ".join(p["tags"]))
         # only print disc if paused
         print("pause to display verbose")
-    print(str(p["comments"]) + " comments")
+    print(str(p["comments"]) + " comments. archived at: " + p["arc_time"] + ", format: " + p["format"])
 
 
 # connect to vlc, parse xml to get currently playing video ID
@@ -149,7 +152,7 @@ while True:
         else:
             display_info(parsed_info, paused)
         last_track = track_title
-    elif paused != last_paused:
+    elif paused != last_paused and parsed_info:
         # only update on play/pause
         os.system('cls' if os.name == 'nt' else 'clear')
         display_info(parsed_info, paused)
