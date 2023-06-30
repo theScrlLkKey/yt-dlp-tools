@@ -8,13 +8,13 @@ from xml.etree import ElementTree
 # TODO:
 # display description, like/dislike, views, title, channel, listed status, date - done
 # open appropriate file from vlc - done
-# age limit display
-# use duration_string from metadata, not VLC
+# age limit display - done
+# use duration_string from metadata, not VLC - done
 # round RYD rating to x.x - done
-# display tags and categories
-# truncate subs to 1k 15k 15mil etc
+# display tags and categories - done
+# display video id and channel id when paused - done
+# truncate subs to 1k 15k 15mil etc - done
 # * maybe display thumbnail as ascii art
-# show video progress and volume with ascii blocks - never
 
 # set defaults
 last_track = ""
@@ -24,6 +24,15 @@ last_paused = False
 # load vlc password from password.txt
 with open('password.txt') as file_pw:
     vlc_password = file_pw.read()
+
+
+def human_format(num):
+    num = float('{:.3g}'.format(num))
+    magnitude = 0
+    while abs(num) >= 1000:
+        magnitude += 1
+        num /= 1000.0
+    return '{}{}'.format('{:f}'.format(num).rstrip('0').rstrip('.'), ['', 'K', 'M', 'B', 'T'][magnitude])
 
 
 # function to load infojson from video id, and split it into appropriate bits
@@ -41,18 +50,27 @@ def load_info(video_id):
             except KeyError:
                 parsed_info["is_ryd"] = False
             parsed_info["description"] = info.get("description")
+            parsed_info["like_h"] = human_format(info.get("like_count"))
+            parsed_info["dislike_h"] = human_format(info.get("dislike_count"))
             parsed_info["like"] = info.get("like_count")
             parsed_info["dislike"] = info.get("dislike_count")
             parsed_info["rating"] = round(float(info.get("average_rating")), 1)
+            parsed_info["views_h"] = human_format(info.get("view_count"))
             parsed_info["views"] = info.get("view_count")
             parsed_info["title"] = info.get("fulltitle")
             parsed_info["channel"] = info.get("uploader")
             parsed_info["handle"] = info.get("uploader_id")
+            parsed_info["subs_h"] = human_format(info.get("channel_follower_count"))
             parsed_info["subs"] = info.get("channel_follower_count")
             parsed_info["published_status"] = info.get("availability")
             parsed_info["was_live"] = info.get("live_status")
             parsed_info["comments"] = info.get("comment_count")
             parsed_info["age"] = info.get("age_limit")
+            parsed_info["duration"] = info.get("duration")
+            parsed_info["id"] = info.get("id")
+            parsed_info["c_id"] = info.get("channel_id")
+            parsed_info["tags"] = info.get("tags")
+            parsed_info["category"] = info.get("categories")
             # maybe we shouldn't assume that the date will always be 8 chars long; whatever
             parsed_info["upload_year"] = str(info.get("upload_date"))[0:4]
             parsed_info["upload_month"] = str(info.get("upload_date"))[4:6]
@@ -65,21 +83,28 @@ def load_info(video_id):
 # should it be formatted as
 # Title: <title> or as
 # <title>
-# also, we don't need these yet progress, end, vol, as we arnt doing them
 def display_info(p, state):
-    # print(f'Progress: ▮▮▮▮▮------- | Volume: ') stupid
-    date = f'{p["upload_year"]}-{p["upload_month"]}-{p["upload_day"]}'
-    print(f'{p["title"]} | {str(datetime.timedelta(seconds=int(1)))} | {p["views"]} views | {date} | {p["was_live"]}')
-    if p["is_ryd"]:
-        print(f'{p["channel"]} ({p["handle"]}) | {p["subs"]} subscribers | {p["like"]}L-{p["dislike"]}D (RYD) | {p["rating"]} avg. rating')
-    else:
-        print(f'{p["channel"]} ({p["handle"]}) | {p["subs"]} subscribers | {p["like"]}L-{p["dislike"]}D | {p["rating"]} avg. rating')
-    print(f'tag | category | {p["published_status"]} | ')
-    # only print disc if paused
+    date = f'{p["upload_year"]}-{p["upload_month"]}-{p["upload_day"]}, '  # date format
+    # only print verbose if paused
     if state:
+        print(f'{p["title"]} | {str(datetime.timedelta(seconds=int(p["duration"])))} | {p["views"]} views | {date} | {p["was_live"]}')
+        if p["is_ryd"]:
+            print(f'{p["channel"]} ({p["handle"]}) | {p["subs"]} subscribers | {p["like"]}L-{p["dislike"]}D (RYD) | {p["rating"]} stars')
+        else:
+            print(f'{p["channel"]} ({p["handle"]}) | {p["subs"]} subscribers | {p["like"]}L-{p["dislike"]}D | {p["rating"]} stars')
+        print(f'{", ".join(p["category"])} | {p["published_status"]} | age limit: {p["age"]} | video ID: {p["id"]} | channel ID: {p["c_id"]}')
+        print(", ".join(p["tags"]))
         print(p["description"])
     else:
-        print("pause to expand description")
+        print(f'{p["title"]} | {str(datetime.timedelta(seconds=int(p["duration"])))} | {p["views_h"]} views | {date} | {p["was_live"]}')
+        if p["is_ryd"]:
+            print(f'{p["channel"]} ({p["handle"]}) | {p["subs_h"]} subscribers | {p["like_h"]} L - {p["dislike_h"]} D (RYD) | {p["rating"]} stars')
+        else:
+            print(f'{p["channel"]} ({p["handle"]}) | {p["subs_h"]} subscribers | {p["like_h"]} L - {p["dislike_h"]} D | {p["rating"]} stars')
+        print(f'{", ".join(p["category"])} | {p["published_status"]} | age limit: {p["age"]} | video ID: {p["id"]}')
+        print(", ".join(p["tags"]))
+        # only print disc if paused
+        print("pause to display verbose")
     print(str(p["comments"]) + " comments")
 
 
@@ -124,10 +149,5 @@ while True:
         os.system('cls' if os.name == 'nt' else 'clear')
         display_info(parsed_info, paused)
         last_paused = paused
-    else:
-        # update status of play/volume, can be done with no valid infojson
-        # os.system('cls' if os.name == 'nt' else 'clear')
-        # display_info(parsed_info, paused)
-        pass
 
     time.sleep(0.5)
