@@ -14,6 +14,7 @@ from xml.etree import ElementTree
 # display tags and categories - done
 # display video id and channel id when paused - done
 # truncate subs to 1k 15k 15mil etc - done
+# maybe display age of video
 # * maybe display thumbnail as ascii art
 
 # set defaults
@@ -47,14 +48,18 @@ def load_info(video_id):
             try:
                 if info["RYD"]["response"]:
                     parsed_info["is_ryd"] = True
+                    parsed_info["dislike_h"] = human_format(info.get("dislike_count"))
             except KeyError:
                 parsed_info["is_ryd"] = False
+                parsed_info["dislike_h"] = None
             parsed_info["description"] = info.get("description")
             parsed_info["like_h"] = human_format(info.get("like_count"))
-            parsed_info["dislike_h"] = human_format(info.get("dislike_count"))
             parsed_info["like"] = info.get("like_count")
             parsed_info["dislike"] = info.get("dislike_count")
-            parsed_info["rating"] = round(float(info.get("average_rating")), 1)
+            if info.get("average_rating"):
+                parsed_info["rating"] = round(float(info.get("average_rating")), 1)
+            else:
+                parsed_info["rating"] = None
             parsed_info["views_h"] = human_format(info.get("view_count"))
             parsed_info["views"] = info.get("view_count")
             parsed_info["title"] = info.get("fulltitle")
@@ -84,7 +89,7 @@ def load_info(video_id):
 # Title: <title> or as
 # <title>
 def display_info(p, state):
-    date = f'{p["upload_year"]}-{p["upload_month"]}-{p["upload_day"]}, '  # date format
+    date = f'{p["upload_year"]}-{p["upload_month"]}-{p["upload_day"]}'  # date format
     # only print verbose if paused
     if state:
         print(f'{p["title"]} | {str(datetime.timedelta(seconds=int(p["duration"])))} | {p["views"]} views | {date} | {p["was_live"]}')
@@ -94,7 +99,7 @@ def display_info(p, state):
             print(f'{p["channel"]} ({p["handle"]}) | {p["subs"]} subscribers | {p["like"]}L-{p["dislike"]}D | {p["rating"]} stars')
         print(f'{", ".join(p["category"])} | {p["published_status"]} | age limit: {p["age"]} | video ID: {p["id"]} | channel ID: {p["c_id"]}')
         print(", ".join(p["tags"]))
-        print(p["description"])
+        print("\n" + p["description"])
     else:
         print(f'{p["title"]} | {str(datetime.timedelta(seconds=int(p["duration"])))} | {p["views_h"]} views | {date} | {p["was_live"]}')
         if p["is_ryd"]:
