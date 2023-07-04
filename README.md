@@ -4,10 +4,11 @@ a collection of tools for viewing json files downloaded by yt-dlp
 - chat-player
   - displays chat replay in sync with a video playing in VLC
 - comment-viewer
-  - displays comments, replies, likes, and other metadata.
-  - subscriber counts, views, etc are from when the video was archived, not released (or live updating).
+  - displays comments, replies, and likes.
 - info-display
-  - displays description, likes/dislikes, views, 
+  - displays description, likes/dislikes, views, and other metadata
+  - subscriber counts, views, etc are from when the video was archived, not released (or live updating).
+  
 
 
 you will need to enable VLC's http server, and set a password. put the password in a file named password.txt
